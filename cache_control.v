@@ -1,93 +1,155 @@
-module cache_control
-(
-    input sys_clk,
-    input sys_rst,
-    input ce,          //来自取指阶段的使能信号
-    input hit,
-    input miss,
-    input replaced,
-    input [511:0] rom_block,       //来自rom的数据
-    output [511:0] cache_block,    //cache要替换的块     
-    output wire [31:0] cache_addr,       //给cache的地址   
-    output wire [31:0] inst,
-    input [31:0] cache_inst,
-    output [31:0] rom_addr         //给Rom的地址，取出所需要的块
+/*
+����״̬��
+����
+�ȶ�     ���Hit ��תΪ���У����miss����dirtyΪ1��ת��д�أ�����ת���滻
+д��     ��ɺ�ת���滻
+�滻     ��ɺ󷵻رȶ�
+*/
+module cache_control (
+    input clk,
+    input rst,
+    input [29:0] addr,
+    input [31:0] wdata,
+    input [31:0] mem_data,
+    input wr,
+    input rd,
+    output reg [29:0] mem_addr,
+    output wire cache_r_hit,
+    output wire [31:0] cache_wb_data,
+    output reg [31:0] cache_data
 );
 
-`define idle 1'b0  //暂停阶段
-`define read 1'b1  //读取阶段
-`define read_rom 2'b10   //读取rom替换阶段
+wire dirty_bit;
 
-reg [1:0] next_stage
-reg [1:0] cur_stage
+reg substitude;
+reg cache_wr;
+reg cache_rd;
+reg [31:0] substitude_data;
 
-always @(posedge sys_clk) begin
-    if(!sys_rst)
-        cur_stage <= idle;
-    else
-        cur_stage <= next_stage;
-end
+wire w_hit;
+wire w_miss;
+wire r_hit;
+wire r_miss;
+wire [31:0] wb_data;
+wire [31:0] data;
 
-inst = (hit)?cache_inst:32'b0;           //命中则把取出的地址输出,丢失则输出0，默认0为输出失败
+reg [1:0] cur_state;
+reg [1:0] next_state;
 
+localparam s0 = 2'b00;
+localparam s1 = 2'b01;
+localparam s2 = 2'b10;
+localparam s3 = 2'b11;
 
-
-always @(*) begin
-    case(cur_stage)begin
-        idle:begin
-            if(ce)       //如果传来读取请求，那么进入read状态
-                next_stage = read;
-            else
-                next_stage = idle;
-        end
-        read:begin
-            if(hit)      //如果命中，那么转回idle模式
-                next_stage = idle;
-            else if (miss)    //如果缺失，那么转到read_rom 模式
-                next_stage = read_rom;
-            else
-                next_stage = read;
-            end
-        read_rom:begin
-            if(replaced)
-                next_stage = read;     //替换成功，转到read阶段继续读取
-            else
-                next_stage = read_rom;
-        end
-        default:next_stage = idle;
-    endcase
-end
-
-always @(posedge sys_clk) begin
-    if(!sys_clk) begin
-        cache_block <= 512'b0;
-        cache_addr <= 32'b0;
-        inst <= 32'b0
-        rom_addr <= 32'b0;
+always @(posedge clk or posedge rst) begin
+    if (rst) begin 
+        cur_state <= s0;
     end
-    else begin
-        case(next_stage) begin
-            idle:begin
-                cache_block <= 512'b0;
-                cache_addr <= 32'b0;
-                inst <= 32'b0
-                rom_addr <= 32'b0;
+    else begin 
+        cur_state <= next_state;
+    end
+end
+    
+always @(*) begin
+    if (rst) begin 
+        next_state <= s0;
+    end
+    else begin 
+        case (cur_state)
+            s0:begin
+                if (wr || rd) next_state <= s1;
+                else next_state <= s0;
+            end 
+            s1:begin
+                if ((w_miss || r_miss) && dirty_bit) next_state <= s2;
+                else if (w_miss || r_miss) next_state <= s3;
+                else if (wr || rd) next_state <= s1;
+                else next_state <= s0;
             end
-            read:begin 
-                cache_addr <= addr;
+            s2:begin 
+                next_state <= s3;
             end
-            read_rom:begin  
-                rom_addr <= {cache_addr[31:10],9'b0};   //块的大小为512位
-                    if(rom_block) begin
-                        cache_block <= rom_block;
-                    end
+            s3:begin 
+                next_state <= s1;
             end
-            default:begin
-                cache_block <= 512'b0;
-                cache_addr <= 32'b0;
-                inst <= 32'b0
-                rom_addr <= 32'b0;
+            default: next_state <= s0;
+        endcase
+    end
+end
+
+always @(posedge clk or posedge rst) begin
+    if (rst) begin 
+        substitude <= 1'b0;
+        cache_data <= 32'b0;
+        cache_wr <= 1'b0;
+        cache_rd <= 1'b0;
+    end
+    else begin 
+        case (next_state)
+            s0:begin 
+                //substitude <= 1'b0;
+                cache_data <= 32'b0;
+                cache_wr <= 1'b0;
+                cache_rd <= 1'b0;
+            end
+            s1:begin
+                //substitude <= 1'b0;
+                cache_rd <= rd;
+                cache_wr <= wr;
+                if (r_hit) cache_data <= data;
+                else cache_data <= 32'b0;
+            end
+            s2:begin 
+                cache_wr <= 1'b0;
+                cache_rd <= 1'b0;
+                //substitude <= 1'b0;
+            end
+            s3:begin 
+                cache_wr <= 1'b0;
+                cache_rd <= 1'b0;
+                //substitude_data <= mem_data;
+                //substitude <= 1'b1;
+            end
+            default:begin 
+                //substitude <= 1'b0;
+                cache_data <= 32'b0;
+                cache_wr <= 1'b0;
+                cache_rd <= 1'b0;
             end
         endcase
     end
 end
+
+always @(*) begin
+    if (next_state == s3) begin 
+        substitude <= 1'b1;
+        substitude_data <= mem_data;
+    end
+    else begin
+        substitude <= 1'b0;
+        substitude_data <= 32'b0;
+    end    
+end
+
+cache u_cache(
+.clk(clk),
+.rst(rst),
+.addr(addr),
+.wdata(wdata),
+.rd(cache_rd),
+.wr(cache_wr),
+.substitude(substitude),
+.substitude_data(substitude_data),
+.dirty_bit(dirty_bit),
+.r_hit(r_hit),
+.r_miss(r_miss),
+.w_hit(w_hit),
+.w_miss(w_miss),
+.wb_data(wb_data),
+.data(data)
+);
+
+assign cache_r_hit = r_hit;
+assign cache_wb_data = wb_data;
+
+endmodule
