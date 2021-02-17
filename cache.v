@@ -21,6 +21,7 @@ module cache (
     input substitude,     //cache_control 发出信号
     //input [1:0] substitude_situation
     input [31:0] substitude_data,
+    output reg substitude_fin,
     output reg dirty_bit,
     output reg r_hit,
     output reg r_miss,
@@ -83,21 +84,26 @@ always @(*) begin
         if (ram_a[51:32] == addr[29:10] && ram_a[53]) begin
             data <= ram_a[31:0];
             r_hit <= 1'b1;
+            r_miss <= 1'b0;
         end
         else if (ram_b[51:32] == addr[29:10] && ram_b[53]) begin 
             data <= ram_b[31:0];
             r_hit <= 1'b1;
+            r_miss <= 1'b0;
         end
         else if (ram_c[51:32] == addr[29:10] && ram_c[53]) begin 
             data <= ram_c[31:0];
             r_hit <= 1'b1;
+            r_miss <= 1'b0;
         end
         else if (ram_d[51:32] == addr[29:10] && ram_d[53]) begin 
             data <= ram_d[31:0];
             r_hit <= 1'b1;
+            r_miss <= 1'b0;
         end
         else begin 
             data <= 32'd0;
+            r_hit <= 1'b0;
             r_miss <= 1'b1;      //未命中
         end
     end
@@ -217,7 +223,8 @@ always @(posedge clk or posedge rst) begin
 end
 
 always @(posedge clk) begin
-    if (substitude) begin 
+    substitude_fin <= 1'b0;
+    if (substitude) begin
         if (count_1 == count_2 && count_1 == count_3 && count_1 == count_4) begin  //相等
             case (count_1)
                 2'b00:ram_1[addr[9:0]] <= {1'b1,1'b0,addr[29:10],substitude_data}; 
@@ -232,6 +239,7 @@ always @(posedge clk) begin
             else if (count_3 == count_min_3) ram_3[addr[9:0]] <= {1'b1,1'b0,addr[29:10],substitude_data}; 
             else ram_4[addr[9:0]] <= {1'b1,1'b0,addr[29:10],substitude_data}; 
         end
+        substitude_fin <= 1'b1;
     end
     if (count_1 == count_2 && count_1 == count_3 && count_1 == count_4) begin  //相等
             case (count_1)
