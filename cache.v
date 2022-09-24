@@ -62,7 +62,7 @@ assign ram_b = ram_2[addr[9:0]];
 assign ram_c = ram_3[addr[9:0]];
 assign ram_d = ram_4[addr[9:0]];
 
-//初始化
+//初始化&写&替换
 always @(posedge clk or posedge rst) begin
     if (rst) begin 
         for (i = 0;i < 1024 ;i = i+1 ) begin   
@@ -75,6 +75,52 @@ always @(posedge clk or posedge rst) begin
         r_miss <= 1'b0;
         w_hit <= 1'b0;
         w_miss <= 1'b0;
+    end
+    else begin
+        if (wr) begin  //写
+            if (ram_a[51:32] == addr[29:10] && ram_a[53]) begin 
+                ram_1[addr[9:0]] <= {1'b1,1'b1,addr[29:10],wdata};
+                w_hit <= 1'b1;
+            end
+            else if (ram_b[51:32] == addr[29:10] && ram_b[53]) begin 
+                ram_2[addr[9:0]] <= {1'b1,1'b1,addr[29:10],wdata};
+                w_hit <= 1'b1;
+            end
+            else if (ram_c[51:32] == addr[29:10] && ram_c[53]) begin 
+                ram_3[addr[9:0]] <= {1'b1,1'b1,addr[29:10],wdata};
+                w_hit <= 1'b1;
+            end
+            else if (ram_d[51:32] == addr[29:10] && ram_d[53]) begin 
+                ram_4[addr[9:0]] <= {1'b1,1'b1,addr[29:10],wdata};
+                w_hit <= 1'b1;
+            end
+            else begin  
+                w_miss <= 1'b1;
+                w_hit <= 1'b0;
+            end
+        end
+        else begin  
+            w_hit <= 1'b0;
+            w_miss <= 1'b0;
+            substitude_fin <= 1'b0;
+            if (substitude) begin
+                if (count_1 == count_2 && count_1 == count_3 && count_1 == count_4) begin  //相等
+                    case (count_1)
+                    2'b00:ram_1[addr[9:0]] <= {1'b1,1'b0,addr[29:10],substitude_data}; 
+                    2'b01:ram_2[addr[9:0]] <= {1'b1,1'b0,addr[29:10],substitude_data}; 
+                    2'b10:ram_3[addr[9:0]] <= {1'b1,1'b0,addr[29:10],substitude_data}; 
+                    2'b11:ram_4[addr[9:0]] <= {1'b1,1'b0,addr[29:10],substitude_data}; 
+                    endcase
+                end
+                else begin 
+                    if (count_1 == count_min_3) ram_1[addr[9:0]] <= {1'b1,1'b0,addr[29:10],substitude_data}; 
+                    else if (count_2 == count_min_3) ram_2[addr[9:0]] <= {1'b1,1'b0,addr[29:10],substitude_data}; 
+                    else if (count_3 == count_min_3) ram_3[addr[9:0]] <= {1'b1,1'b0,addr[29:10],substitude_data}; 
+                    else ram_4[addr[9:0]] <= {1'b1,1'b0,addr[29:10],substitude_data}; 
+                end
+            substitude_fin <= 1'b1;
+            end
+        end
     end
 end
 
@@ -115,6 +161,7 @@ always @(*) begin
 end
 
 //写
+/*
 always @(posedge clk) begin
     if (wr) begin
         if (ram_a[51:32] == addr[29:10] && ram_a[53]) begin 
@@ -142,7 +189,7 @@ always @(posedge clk) begin
         w_hit <= 1'b0;
         w_miss <= 1'b0;
     end
-end
+end*/
 
 //替换
 always @(posedge clk or posedge rst) begin
@@ -223,7 +270,7 @@ always @(posedge clk or posedge rst) begin
 end
 
 always @(posedge clk) begin
-    substitude_fin <= 1'b0;
+    /*substitude_fin <= 1'b0;
     if (substitude) begin
         if (count_1 == count_2 && count_1 == count_3 && count_1 == count_4) begin  //相等
             case (count_1)
@@ -240,7 +287,7 @@ always @(posedge clk) begin
             else ram_4[addr[9:0]] <= {1'b1,1'b0,addr[29:10],substitude_data}; 
         end
         substitude_fin <= 1'b1;
-    end
+    end*/
     if (count_1 == count_2 && count_1 == count_3 && count_1 == count_4) begin  //相等
             case (count_1)
                 2'b00:begin 
