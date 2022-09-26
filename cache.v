@@ -66,13 +66,13 @@ assign ram_d = ram_4[addr[9:0]];
 always @(posedge clk or posedge rst) begin
     if (rst) begin 
         for (i = 0;i < 1024 ;i = i+1 ) begin   
-            ram_1[i] <= ram_1[i] & 54'd0;  
-            ram_2[i] <= ram_2[i] & 54'd0; 
-            ram_3[i] <= ram_3[i] & 54'd0; 
-            ram_4[i] <= ram_4[i] & 54'd0;
+            ram_1[i] = ram_1[i] & 54'd0;  
+            ram_2[i] = ram_2[i] & 54'd0; 
+            ram_3[i] = ram_3[i] & 54'd0; 
+            ram_4[i] = ram_4[i] & 54'd0;
         end   
-        r_hit <= 1'b0;
-        r_miss <= 1'b0;
+        //r_hit <= 1'b0;
+        //r_miss <= 1'b0;
         w_hit <= 1'b0;
         w_miss <= 1'b0;
     end
@@ -128,35 +128,35 @@ end
 always @(*) begin
     if (rd) begin 
         if (ram_a[51:32] == addr[29:10] && ram_a[53]) begin
-            data <= ram_a[31:0];
-            r_hit <= 1'b1;
-            r_miss <= 1'b0;
+            data = ram_a[31:0];
+            r_hit = 1'b1;
+            r_miss = 1'b0;
         end
         else if (ram_b[51:32] == addr[29:10] && ram_b[53]) begin 
-            data <= ram_b[31:0];
-            r_hit <= 1'b1;
-            r_miss <= 1'b0;
+            data = ram_b[31:0];
+            r_hit = 1'b1;
+            r_miss = 1'b0;
         end
         else if (ram_c[51:32] == addr[29:10] && ram_c[53]) begin 
-            data <= ram_c[31:0];
-            r_hit <= 1'b1;
-            r_miss <= 1'b0;
+            data = ram_c[31:0];
+            r_hit = 1'b1;
+            r_miss = 1'b0;
         end
         else if (ram_d[51:32] == addr[29:10] && ram_d[53]) begin 
-            data <= ram_d[31:0];
-            r_hit <= 1'b1;
-            r_miss <= 1'b0;
+            data = ram_d[31:0];
+            r_hit = 1'b1;
+            r_miss = 1'b0;
         end
         else begin 
-            data <= 32'd0;
-            r_hit <= 1'b0;
-            r_miss <= 1'b1;      //Î´ÃüÖÐ
+            data = 32'd0;
+            r_hit = 1'b0;
+            r_miss = 1'b1;      //Î´ÃüÖÐ
         end
     end
     else begin
-        data <= 32'h00000000;
-        r_hit <= 1'b0;
-        r_miss <= 1'b0;
+        data = 32'h00000000;
+        r_hit = 1'b0;
+        r_miss = 1'b0;
     end
 end
 
@@ -302,7 +302,7 @@ always @(posedge clk) begin
                     dirty_bit <= ram_c[52]; 
                     wb_data <= ram_c[31:0];
                 end
-                2'b11:begin 
+                2'b11:begin
                     dirty_bit <= ram_d[52]; 
                     wb_data <= ram_d[31:0];
                 end
@@ -322,25 +322,25 @@ always @(posedge clk) begin
             wb_data <= ram_c[31:0];
         end
         else begin 
-            ram_4[addr[9:0]] <= dirty_bit <= ram_d[52]; 
+            dirty_bit <= ram_d[52]; 
             wb_data <= ram_d[31:0];
         end
     end
 end
 
 always @(*) begin
-    if (count_1 < count_2) count_min_1 <= count_1;
-    else count_min_1 <= count_2;
+    if (count_1 < count_2) count_min_1 = count_1;
+    else count_min_1 = count_2;
 end
 
 always @(*) begin
-    if (count_3 < count_4) count_min_2 <= count_3;
-    else count_min_2 <= count_4;
+    if (count_3 < count_4) count_min_2 = count_3;
+    else count_min_2 = count_4;
 end
 
 always @(*) begin
-    if (count_min_1 < count_min_2) count_min_3 <= count_min_1;
-    else count_min_3 <= count_min_2;
+    if (count_min_1 < count_min_2) count_min_3 = count_min_1;
+    else count_min_3 = count_min_2;
 end
     
 endmodule

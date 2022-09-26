@@ -57,64 +57,63 @@ end
     
 always @(*) begin
     if (rst) begin 
-        next_state <= s0;
+        next_state = s0;
     end
     else begin 
         case (cur_state)
             s0:begin
                 if (wr || rd) begin 
-                    next_state <= s1;
+                    next_state = s1;
                 end
                 else begin 
-                    next_state <= s0;
+                    next_state = s0;
                 end
             end 
             s1:begin
                 if ((w_miss || r_miss) && dirty_bit) begin 
-                    next_state <= s2;
+                    next_state = s2;
                 end
                 else if (w_miss || r_miss) begin 
-                    next_state <= s3;
+                    next_state = s3;
                 end
                 else if (wr || rd) begin 
-                    next_state <= s1;
+                    next_state = s1;
                 end
                 else begin  
-                    next_state <= s0;
+                    next_state = s0;
                 end
             end
             s2:begin 
-                if (mem_write_fin) next_state <= s3;
-                else next_state <= s2;
+                if (mem_write_fin) next_state = s3;
+                else next_state = s2;
             end
             s3:begin 
-                if(substitude_fin) next_state <= s1;
-                else next_state <= s3;
+                if(substitude_fin) next_state = s1;
+                else next_state = s3;
             end
-            default: next_state <= s0;
+            default: next_state = s0;
         endcase
     end
 end
 
 always @(*) begin
     if (next_state == s2 || next_state == s3) begin 
-        miss <= 1'b1;
-        cache_data <= data;
+        miss = 1'b1;
+        cache_data = data;
     end
     else if (next_state == s1 && r_hit == 1'b0) begin 
-        miss <= 1'b1;
-        cache_data <= data;
+        miss = 1'b1;
+        cache_data = data;
     end
     else begin  
-        miss <= 1'b0;
-        cache_data <= data;
+        miss = 1'b0;
+        cache_data = data;
     end
 end
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin 
-        substitude <= 1'b0;
-        cache_data <= 32'b0;
+        //cache_data <= 32'b0;
         cache_wr <= 1'b0;
         cache_rd <= 1'b0;
         //miss <= 1'b0;
@@ -124,7 +123,7 @@ always @(posedge clk or posedge rst) begin
             s0:begin 
                 //substitude <= 1'b0;
                 //miss <= 1'b0;
-                cache_data <= 32'b0;
+                //cache_data <= 32'b0;
                 cache_wr <= 1'b0;
                 cache_rd <= 1'b0;
                 mem_read_ce <= 1'b0;
@@ -163,7 +162,7 @@ always @(posedge clk or posedge rst) begin
             end
             default:begin 
                 //substitude <= 1'b0;
-                cache_data <= 32'b0;
+                //cache_data <= 32'b0;
                 cache_wr <= 1'b0;
                 cache_rd <= 1'b0;
             end
@@ -173,12 +172,12 @@ end
 
 always @(*) begin
     if (next_state == s3 && mem_read_fin) begin 
-        substitude <= 1'b1;
-        substitude_data <= mem_data;
+        substitude = 1'b1;
+        substitude_data = mem_data;
     end
     else begin
-        substitude <= 1'b0;
-        substitude_data <= 32'b0;
+        substitude = 1'b0;
+        substitude_data = 32'b0;
     end    
 end
 
