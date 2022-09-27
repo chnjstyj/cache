@@ -147,6 +147,7 @@ always @(posedge clk or posedge rst) begin
             s2:begin 
                 cache_wr <= 1'b0;
                 cache_rd <= 1'b0;
+                mem_read_ce <= 1'b0;
                 mem_write_ce <= 1'b1;
                 //miss <= 1'b1;
                 //substitude <= 1'b0;
